@@ -12,6 +12,8 @@ class CombineHandler extends AbstractProcessingHandler
 {
     protected $handler;
 
+    protected $maxLength = 100000;
+
     public function __construct(HandlerInterface $handler)
     {
         $this->handler = $handler;
@@ -39,9 +41,15 @@ class CombineHandler extends AbstractProcessingHandler
             $datetime = $record['datetime'];
         }
 
+        $message = (string) $this->getFormatter()->formatBatch($messages);
+        if (strlen($message) > $this->maxLength) {
+            $partSize = intval($this->maxLength / 2) - 5;
+            $message = substr($message, 0, $partSize) . PHP_EOL . '...' . PHP_EOL . substr($message, -$partSize);
+        }
+
         if (!empty($messages)) {
             $rec = array(
-                'message' => (string) $this->getFormatter()->formatBatch($messages),
+                'message' => $message,
                 'context' => array(),
                 'level' => $maxLevel,
                 'level_name' => $maxLevelName,
